@@ -1,0 +1,50 @@
+name: Birthday Bot Notifications
+
+# Запуск каждый день в 6:00 UTC (9:00 МСК)
+on:
+  schedule:
+    - cron: '0 6 * * *'  # 6:00 UTC = 9:00 МСК
+  
+  # Возможность запустить вручную
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode (send test message)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  send-birthday-notifications:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+    
+    - name: Send birthday notifications
+      env:
+        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        CHAT_ID: ${{ secrets.CHAT_ID }}
+      run: |
+        if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+          echo "🧪 Running in test mode"
+          python birthday_bot.py test
+        else
+          echo "📅 Running daily birthday check"
+          python birthday_bot.py
+        fi
+    
+    - name: Log completion
+      run: |
+        echo "✅ Birthday bot check completed at $(date)"
